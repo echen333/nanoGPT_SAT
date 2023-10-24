@@ -56,7 +56,7 @@ def load_sat_tokens(fn, stoi):
             yield [stoi[c] for c in line.split()], label
 
 def line_sat(line, sep=' '):
-    assert not ((sep + 'UNSAT') in line and (sep + ' SAT') in line) or sep == ''
+    assert not ((sep + 'UNSAT') in line and (sep + 'SAT') in line) or sep == ''
     if sep + 'UNSAT' in line:
         return False
     elif sep + 'SAT' in line:
@@ -68,7 +68,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 torch.backends.cuda.matmul.allow_tf32 = True # allow tf32 on matmul
 torch.backends.cudnn.allow_tf32 = True # allow tf32 on cudnn
-device_type = 'cuda' if 'cuda' in device else 'cpu' # for later use in torch.autocast
+device_type = 'cuda' if 'cuda' in device and torch.cuda.is_available() else 'cpu' # for later use in torch.autocast
 ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}[dtype]
 ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(device_type=device_type, dtype=ptdtype)
 
@@ -76,7 +76,7 @@ ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(device_type=
 if init_from == 'resume':
     # init from a model saved in a specific directory
     ckpt_path = os.path.join(out_dir, 'ckpt.pt')
-    checkpoint = torch.load(ckpt_path, map_location=device)
+    checkpoint = torch.load(ckpt_path, map_location=device_type)
     gptconf = GPTConfig(**checkpoint['model_args'])
     model = GPT(gptconf)
     state_dict = checkpoint['model']
